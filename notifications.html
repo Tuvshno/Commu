@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commu source notifications</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #292929;
+            background: transparent;
+        }
+
+        .detail-section {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+        }
+
+        .source-total {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .detail-item {
+            background: #f7f7f7;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        a {
+            color: #333;
+        }
+
+        .message {
+            border-bottom: 1px solid #ddd;
+            padding: 12px 5px;
+        }
+
+        .message:last-child {
+            border-bottom: none;
+        }
+
+        .message p {
+            margin-bottom: 5px;
+        }
+
+        .message-time {
+            margin-left: 8px;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .email-info {
+            color: #666;
+            font-size: 13px;
+        }
+
+        :focus-visible {
+            outline: 2px solid #555;
+            outline-offset: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <main aria-label="Related source notifications for Issue 18">
+        <!-- GITHUB -->
+        <section class="detail-section">
+
+            <div class="section-header">
+
+                <h2>GitHub</h2>
+
+                <span class="source-total">
+                    2 related items
+                </span>
+
+            </div>
+
+
+            <div class="detail-item" id="github-issue-18">
+
+                <strong>Issue #18</strong>
+
+                <p>
+                    Dashboard does not load repository data after
+                    connecting a GitHub repository.
+                </p>
+
+                <a href="#github-issue-18">
+                    View GitHub Issue
+                </a>
+
+            </div>
+
+
+            <div class="detail-item" id="github-pr-12">
+
+                <strong>Pull Request #12</strong>
+
+                <p>
+                    Updated the repository connection and changed how
+                    GitHub repository data is retrieved.
+                </p>
+
+                <a href="#github-pr-12">
+                    View Pull Request
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- SLACK -->
+        <section class="detail-section">
+
+            <div class="section-header">
+
+                <h2>Slack</h2>
+
+                <span class="source-total">
+                    5 related messages
+                </span>
+
+            </div>
+
+
+            <div class="message">
+
+                <strong>Alex</strong>
+
+                <span class="message-time">
+                    9:32 AM
+                </span>
+
+                <p>
+                    The repository connects correctly but the dashboard
+                    is still empty.
+                </p>
+
+            </div>
+
+
+            <div class="message">
+
+                <strong>Jordan</strong>
+
+                <span class="message-time">
+                    9:36 AM
+                </span>
+
+                <p>
+                    I'm getting the same thing. I think the response from
+                    GitHub isn't being passed to the dashboard.
+                </p>
+
+            </div>
+
+
+            <div class="message">
+
+                <strong>Sam</strong>
+
+                <span class="message-time">
+                    10:05 AM
+                </span>
+
+                <p>
+                    PR #12 changed the retrieval logic. We should probably
+                    check that first.
+                </p>
+
+            </div>
+
+            <div class="message"><strong>Maya</strong><span class="message-time">10:12 AM</span>
+                <p>The repository request completes, but the dashboard receives an empty list. We should check how the
+                    response is mapped.</p>
+            </div>
+            <div class="message"><strong>Alex</strong><span class="message-time">10:20 AM</span>
+                <p>I will trace the response through PR #12 and verify that the repository issues reach the dashboard
+                    before the demo.</p>
+            </div>
+        </section>
+
+
+        <!-- EMAIL -->
+        <section class="detail-section">
+
+            <div class="section-header">
+
+                <h2>Email</h2>
+
+                <span class="source-total">
+                    1 related email
+                </span>
+
+            </div>
+
+
+            <div class="detail-item">
+
+                <strong>
+                    Dashboard Repository Issue
+                </strong>
+
+                <p class="email-info">
+                    From: Project Lead
+                </p>
+
+                <p>
+                    The repository connection appears successful, but the
+                    dashboard is not displaying project information.
+                    Please investigate this before the next project demo.
+                </p>
+
+            </div>
+
+        </section>
+    </main>
+</body>
+
+</html>
