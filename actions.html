@@ -104,9 +104,9 @@
         <h2 id="actions-heading">AI Suggested Actions</h2>
         <p>Suggested next steps for Issue #18, based on its GitHub, Slack, and Email context. Review each action, then
             confirm or deny it.</p>
-        <p class="note">Confirmed</p>
+        <p class="note">Decisions are saved locally. No GitHub task, Slack message, or email is sent.</p>
 
-        <section class="action" aria-labelledby="action-investigate">
+        <section class="action" data-action-id="investigate" aria-labelledby="action-investigate">
             <h3 id="action-investigate">1. Create a task to investigate the data retrieval flow</h3>
             <p>Recommended first: trace the response through PR #12 to find where repository information stops reaching
                 the dashboard.</p>
@@ -123,7 +123,7 @@
             <p class="result" role="status" tabindex="-1"></p>
         </section>
 
-        <section class="action" aria-labelledby="action-update">
+        <section class="action" data-action-id="update" aria-labelledby="action-update">
             <h3 id="action-update">2. Share an investigation update with the team</h3>
             <p>Keep the team informed about the suspected cause and who is investigating it.</p>
             <p class="evidence">Context: Alex, Jordan, and Sam are discussing the empty dashboard in Slack.</p>
@@ -139,7 +139,7 @@
             <p class="result" role="status" tabindex="-1"></p>
         </section>
 
-        <section class="action" aria-labelledby="action-email">
+        <section class="action" data-action-id="email" aria-labelledby="action-email">
             <h3 id="action-email">3. Reply to the project lead about the demo</h3>
             <p>Acknowledge the demo blocker and explain the next step without promising a fix date.</p>
             <p class="evidence">Context: the project lead’s email asks the team to investigate before the next demo.</p>
@@ -156,18 +156,79 @@
     </main>
     <script>
         document.querySelectorAll('.action').forEach(function (action) {
-            action.querySelectorAll('button').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const result = action.querySelector('.result');
-                    result.textContent = button.dataset.decision === 'confirm'
-                        ? button.dataset.result
-                        : 'Denied — this action was skipped.';
-                    action.querySelectorAll('button').forEach(function (choice) {
-                        choice.disabled = true;
-                    });
+            const actionId = action.dataset.actionId;
+            const buttons = action.querySelectorAll('button');
+            const result = action.querySelector('.result');
+            const url = '/api/actions/' + encodeURIComponent(actionId);
+
+            function setButtonsDisabled(disabled) {
+                buttons.forEach(function (button) {
+                    button.disabled = disabled;
+                });
+            }
+
+            function showDecision(decision) {
+                result.textContent = decision === 'confirmed'
+                    ? 'Confirmed and saved. No external action was performed.'
+                    : 'Denied and saved. No external action was performed.';
+                setButtonsDisabled(true);
+            }
+
+            async function loadDecision() {
+                setButtonsDisabled(true);
+                result.textContent = 'Loading saved decision...';
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Could not load the decision.');
+                    }
+
+                    const saved = await response.json();
+                    if (saved) {
+                        showDecision(saved.decision);
+                    } else {
+                        result.textContent = '';
+                        setButtonsDisabled(false);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    result.textContent = 'Could not load the decision. Reload the page to retry.';
+                }
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', async function () {
+                    const decision = button.dataset.decision === 'confirm'
+                        ? 'confirmed'
+                        : 'denied';
+
+                    setButtonsDisabled(true);
+                    result.textContent = 'Saving decision...';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ decision })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Could not save the decision.');
+                        }
+
+                        const saved = await response.json();
+                        showDecision(saved.decision);
+                    } catch (error) {
+                        console.error(error);
+                        result.textContent = 'Could not save the decision. Please try again.';
+                        setButtonsDisabled(false);
+                    }
                     result.focus();
                 });
             });
+
+            loadDecision();
         });
     </script>
 </body>
