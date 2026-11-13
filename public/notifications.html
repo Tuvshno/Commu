@@ -87,6 +87,12 @@
             font-size: 13px;
         }
 
+        .status-message {
+            color: #666;
+            font-size: 14px;
+            padding: 10px 0;
+        }
+
         :focus-visible {
             outline: 2px solid #555;
             outline-offset: 3px;
@@ -95,161 +101,86 @@
 </head>
 
 <body>
-    <main aria-label="Related source notifications for Issue 18">
-        <!-- GITHUB -->
-        <section class="detail-section">
-
-            <div class="section-header">
-
-                <h2>GitHub</h2>
-
-                <span class="source-total">
-                    2 related items
-                </span>
-
-            </div>
-
-
-            <div class="detail-item" id="github-issue-18">
-
-                <strong>Issue #18</strong>
-
-                <p>
-                    Dashboard does not load repository data after
-                    connecting a GitHub repository.
-                </p>
-
-                <a href="#github-issue-18">
-                    View GitHub Issue
-                </a>
-
-            </div>
-
-
-            <div class="detail-item" id="github-pr-12">
-
-                <strong>Pull Request #12</strong>
-
-                <p>
-                    Updated the repository connection and changed how
-                    GitHub repository data is retrieved.
-                </p>
-
-                <a href="#github-pr-12">
-                    View Pull Request
-                </a>
-
-            </div>
-
-        </section>
-
-
-        <!-- SLACK -->
-        <section class="detail-section">
-
-            <div class="section-header">
-
-                <h2>Slack</h2>
-
-                <span class="source-total">
-                    5 related messages
-                </span>
-
-            </div>
-
-
-            <div class="message">
-
-                <strong>Alex</strong>
-
-                <span class="message-time">
-                    9:32 AM
-                </span>
-
-                <p>
-                    The repository connects correctly but the dashboard
-                    is still empty.
-                </p>
-
-            </div>
-
-
-            <div class="message">
-
-                <strong>Jordan</strong>
-
-                <span class="message-time">
-                    9:36 AM
-                </span>
-
-                <p>
-                    I'm getting the same thing. I think the response from
-                    GitHub isn't being passed to the dashboard.
-                </p>
-
-            </div>
-
-
-            <div class="message">
-
-                <strong>Sam</strong>
-
-                <span class="message-time">
-                    10:05 AM
-                </span>
-
-                <p>
-                    PR #12 changed the retrieval logic. We should probably
-                    check that first.
-                </p>
-
-            </div>
-
-            <div class="message"><strong>Maya</strong><span class="message-time">10:12 AM</span>
-                <p>The repository request completes, but the dashboard receives an empty list. We should check how the
-                    response is mapped.</p>
-            </div>
-            <div class="message"><strong>Alex</strong><span class="message-time">10:20 AM</span>
-                <p>I will trace the response through PR #12 and verify that the repository issues reach the dashboard
-                    before the demo.</p>
-            </div>
-        </section>
-
-
-        <!-- EMAIL -->
-        <section class="detail-section">
-
-            <div class="section-header">
-
-                <h2>Email</h2>
-
-                <span class="source-total">
-                    1 related email
-                </span>
-
-            </div>
-
-
-            <div class="detail-item">
-
-                <strong>
-                    Dashboard Repository Issue
-                </strong>
-
-                <p class="email-info">
-                    From: Project Lead
-                </p>
-
-                <p>
-                    The repository connection appears successful, but the
-                    dashboard is not displaying project information.
-                    Please investigate this before the next project demo.
-                </p>
-
-            </div>
-
-        </section>
+    <!-- Sections are no longer hardcoded: they are built from the database via the API -->
+    <main id="notifications" aria-label="Related source notifications">
+        <p class="status-message">Loading notifications...</p>
     </main>
+
+    <script>
+        // Issue id comes from the URL, e.g. notifications.html?id=18
+        // (falls back to 18 so the page still works when opened on its own)
+        const issueId = new URLSearchParams(window.location.search).get('id') || '18';
+
+        // Escape text coming from the database before putting it in HTML
+        function esc(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function link(item) {
+            if (!item.link_url) return '';
+            return `<a href="${esc(item.link_url)}">${esc(item.link_label || 'View')}</a>`;
+        }
+
+        // One renderer per source so each keeps its original look
+        const renderers = {
+            GitHub: item => `
+                <div class="detail-item">
+                    <strong>${esc(item.title)}</strong>
+                    <p>${esc(item.body)}</p>
+                    ${link(item)}
+                </div>`,
+
+            Slack: item => `
+                <div class="message">
+                    <strong>${esc(item.author)}</strong>
+                    <span class="message-time">${esc(item.time_label)}</span>
+                    <p>${esc(item.body)}</p>
+                </div>`,
+
+            Email: item => `
+                <div class="detail-item">
+                    <strong>${esc(item.title)}</strong>
+                    <p class="email-info">From: ${esc(item.author)}</p>
+                    <p>${esc(item.body)}</p>
+                </div>`
+        };
+
+        function renderGroup(group) {
+            const render = renderers[group.source] || renderers.GitHub;
+            const items = group.items.length
+                ? group.items.map(render).join('')
+                : '<p class="status-message">No related items.</p>';
+
+            return `
+                <section class="detail-section">
+                    <div class="section-header">
+                        <h2>${esc(group.source)}</h2>
+                        <span class="source-total">${esc(group.totalLabel)}</span>
+                    </div>
+                    ${items}
+                </section>`;
+        }
+
+        const root = document.getElementById('notifications');
+
+        fetch(`/api/issues/${encodeURIComponent(issueId)}/notifications`)
+            .then(response => {
+                if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+                return response.json();
+            })
+            .then(groups => {
+                root.innerHTML = groups.map(renderGroup).join('');
+            })
+            .catch(error => {
+                console.error(error);
+                root.innerHTML = '<p class="status-message">Could not load notifications.</p>';
+            });
+    </script>
 </body>
 
 </html>
