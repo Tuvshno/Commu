@@ -1,4 +1,3 @@
-const validActionIds = new Set(['investigate', 'update', 'email']);
 const validDecisions = new Set(['confirmed', 'denied']);
 
 class ValidationError extends Error {}
@@ -6,6 +5,10 @@ class ValidationError extends Error {}
 class ActionService {
     constructor(repository) {
         this.repository = repository;
+    }
+
+    getActionsForIssue(issueId) {
+        return this.repository.getActionsForIssue(issueId);
     }
 
     getDecision(actionId) {
@@ -25,7 +28,7 @@ class ActionService {
     }
 
     validateActionId(actionId) {
-        if (!validActionIds.has(actionId)) {
+        if (!this.repository.actionExists(actionId)) {
             throw new ValidationError('Unknown action.');
         }
     }
