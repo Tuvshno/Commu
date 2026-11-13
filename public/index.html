@@ -83,13 +83,7 @@
 
                         <strong>AI Summary</strong>
 
-                        <p>
-                            The GitHub repository connects successfully,
-                            but repository data is not appearing on the
-                            dashboard. The team believes the issue is related
-                            to the data retrieval request and is currently
-                            investigating it.
-                        </p>
+                        <p id="issue-18-summary" role="status">Loading summary...</p>
 
                     </div>
 
@@ -134,5 +128,23 @@
             </main>
         </div>
     </div>
+    <script>
+        async function loadDashboardSummary() {
+            const summary = document.getElementById('issue-18-summary');
+            try {
+                const response = await fetch('/api/issues/18/summary');
+                if (!response.ok) {
+                    throw new Error('Could not load the summary.');
+                }
+                const data = await response.json();
+                summary.textContent = data ? data.dashboard_text : 'No summary available for this issue.';
+            } catch (error) {
+                console.error(error);
+                summary.textContent = 'Could not load the summary. Reload the page to retry.';
+            }
+        }
+
+        loadDashboardSummary();
+    </script>
 </body>
 </html>
