@@ -2,14 +2,21 @@ const express = require('express');
 const path = require('path');
 const ActionRepository = require('./src/repositories/actionRepository');
 const ActionService = require('./src/services/actionService');
+const IssueRepository = require('./src/repositories/issueRepository');
+const IssueService = require('./src/services/issueService');
 
 const app = express();
 const port = 3000;
 
 const repository = new ActionRepository(path.join(__dirname, 'commu.db'));
 const actionService = new ActionService(repository);
+const issueService = new IssueService(new IssueRepository(repository.db));
 
 app.use(express.json());
+
+app.get('/api/issues/:issueId', (req, res) => {
+    res.json(issueService.getIssue(req.params.issueId));
+});
 
 app.get('/api/actions/:actionId', (req, res) => {
     const decision = actionService.getDecision(req.params.actionId);
@@ -47,7 +54,11 @@ app.get('/:file', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    if (err instanceof ActionService.ValidationError) {
+    if (err instanceof IssueService.NotFoundError) {
+        return res.status(404).json({ error: err.message });
+    }
+
+    if (err instanceof ActionService.ValidationError || err instanceof IssueService.ValidationError) {
         return res.status(400).json({ error: err.message });
     }
 
