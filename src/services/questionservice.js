@@ -26,3 +26,5 @@ class qs {
 module.exports = qs;
 module.exports.ve = ve;
 module.exports.nfe = nfe;
+module.exports.ValidationError = ve;
+module.exports.NotFoundError = nfe;

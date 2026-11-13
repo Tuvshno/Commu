@@ -81,11 +81,11 @@
 
             <iframe id="summary" title="Issue summary" width="100%" height="300" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
 
-            <iframe id="notifications" src="notifications.html" title="GitHub, Slack, and Email information for Issue 18" width="100%" height="1300" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
+            <iframe id="notifications" title="Related source notifications" width="100%" height="1300" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
 
             <iframe id="actions" title="Suggested actions" width="100%" height="1100" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
 
-            <iframe id="question" src="question.html" title="Ask about the project" width="100%" height="540" style="display: block; border: 0;"></iframe>
+            <iframe id="question" title="Ask about the project" width="100%" height="540" style="display: block; border: 0;"></iframe>
             </div>
         </main>
     </div>
@@ -119,6 +119,9 @@
             document.getElementById('summary').title = 'Summary for Issue ' + issue.id;
             document.getElementById('actions').src = 'actions.html?id=' + encodeURIComponent(issue.id);
             document.getElementById('actions').title = 'Suggested actions for Issue ' + issue.id;
+            document.getElementById('notifications').src = 'notifications.html?id=' + encodeURIComponent(issue.id);
+            document.getElementById('notifications').title = 'Sources for Issue ' + issue.id;
+            document.getElementById('question').src = 'question.html?id=' + encodeURIComponent(issue.id);
             document.title = 'Issue #' + issue.id + ' - Commu';
             document.getElementById('issue-content').hidden = false;
             message.textContent = '';
