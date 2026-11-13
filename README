@@ -1,0 +1,17 @@
+# Commu:
+
+To run
+-  Install Node.js
+- `npm install` to install dependencies
+
+
+To run the server:
+- `node server.js`
+
+Open http://localhost:3000 in the browser to see the website running.
+
+The architecture separates two responsibilities:
+- Service: Handles the business logic
+- Repository: Handles database access—SQL queries that save and retrieve decisions.
+
+server.js runs and handles the server.
