@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commu question component</title>
     <style>
         * {
             box-sizing: border-box;
         }
+
 
         body {
             margin: 0;
@@ -17,16 +14,19 @@
             background: transparent;
         }
 
+
         .mock-note {
             color: #666;
             font-size: 13px;
             line-height: 1.5;
         }
 
+
         :focus-visible {
             outline: 2px solid #555;
             outline-offset: 3px;
         }
+
 
         /* Question prompt below the issues */
         .ask-question {
@@ -36,14 +36,17 @@
             margin-top: 24px;
         }
 
+
         .ask-question h2 {
             margin-top: 0;
             font-size: 20px;
         }
 
+
         .ask-question p {
             line-height: 1.5;
         }
+
 
         .chat-messages {
             max-height: 360px;
@@ -51,23 +54,28 @@
             overflow-wrap: anywhere;
         }
 
+
         .chat-exchange {
             border-top: 1px solid #ddd;
             padding: 16px 0;
         }
+
 
         .chat-exchange p {
             margin: 8px 0 16px;
             white-space: pre-wrap;
         }
 
+
         .chat-exchange a {
             color: #333;
         }
 
+
         .question-form {
             margin-top: 16px;
         }
+
 
         .question-form label {
             display: block;
@@ -75,10 +83,12 @@
             margin-bottom: 8px;
         }
 
+
         .question-input-row {
             display: flex;
             gap: 10px;
         }
+
 
         .question-input-row input {
             flex: 1;
@@ -88,6 +98,7 @@
             font: inherit;
         }
 
+
         .question-input-row button {
             border: 1px solid #aaa;
             background: #eee;
@@ -96,9 +107,11 @@
             cursor: pointer;
         }
 
+
         .question-input-row button:hover {
             background: #ddd;
         }
+
 
         @media (max-width: 480px) {
             .question-input-row {
@@ -106,9 +119,11 @@
             }
         }
 
+
         .ask-question {
             margin-top: 0;
         }
+
 
         .chat-messages {
             max-height: 180px;
@@ -116,66 +131,117 @@
     </style>
 </head>
 
+
 <body>
     <section class="ask-question" aria-labelledby="ask-heading">
         <h2 id="ask-heading">Ask about the project</h2>
-        <p>Ask a question to find context across GitHub, Slack, and Email.</p>
+        <p id="ask-note">This demo returns the same saved sample answer for any question. It does not generate an AI response.</p>
         <div id="chat-messages" class="chat-messages" role="log" aria-label="Questions and sample answers"
             aria-live="polite" aria-relevant="additions"></div>
+
 
         <form id="question-form" class="question-form">
             <label for="project-question">Your question</label>
             <div class="question-input-row">
                 <input id="project-question" name="question" type="text"
-                    placeholder="I'm new here. What should I know about this project?" maxlength="500"
+                    placeholder="Ask a question about this issue" maxlength="500"
                     aria-describedby="ask-note" required>
                 <button type="submit">Send</button>
             </div>
         </form>
+        <p id="question-status" role="status"></p>
     </section>
     <script>
         const questionForm = document.getElementById('question-form');
         const questionInput = document.getElementById('project-question');
         const chatMessages = document.getElementById('chat-messages');
+        const status = document.getElementById('question-status');
+        const sendButton = questionForm.querySelector('button');
+        const issueId = new URLSearchParams(window.location.search).get('id') ?? '18';
 
-        questionForm.addEventListener('submit', function (event) {
+
+        questionForm.addEventListener('submit', async function (event) {
             event.preventDefault();
             const question = questionInput.value.trim();
             if (!question) {
-                questionInput.value = '';
-                questionInput.reportValidity();
+                status.textContent = 'Enter a question before sending.';
+                questionInput.focus();
                 return;
             }
 
+
+            sendButton.disabled = true;
+            status.textContent = 'Loading sample answer...';
+            try {
+                const response = await fetch('/api/issues/' + encodeURIComponent(issueId) + '/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Could not load a sample answer.');
+                }
+                const sample = await response.json();
+                showExchange(question, sample);
+                questionInput.value = '';
+                status.textContent = '';
+            } catch (error) {
+                console.error(error);
+                status.textContent = error instanceof TypeError
+                    ? 'Could not reach the server. Please try again.'
+                    : error.message;
+            } finally {
+                sendButton.disabled = false;
+                questionInput.focus();
+            }
+        });
+
+
+        function showExchange(question, sample) {
             const exchange = document.createElement('div');
             exchange.className = 'chat-exchange';
+
 
             const questionLabel = document.createElement('strong');
             questionLabel.textContent = 'You';
             const questionText = document.createElement('p');
             questionText.textContent = question;
 
+
             const answerLabel = document.createElement('strong');
-            answerLabel.textContent = 'Commu · Sample answer';
+            answerLabel.textContent = sample.answer_label;
             const answer = document.createElement('p');
-            answer.textContent = 'Welcome to the project! The team is building Commu to bring project information from GitHub, Slack, and Email into one dashboard, grouped by issue. Start with Issue #18: the repository connects, but its data is not reaching the dashboard. Alex is investigating the retrieval flow changed in PR #12. Next, review Issue #21 for Slack message grouping and Issue #24 for missing updates in summaries. These issues give you a starting point for understanding the current work.';
+            answer.textContent = sample.answer_text;
+
 
             const sources = document.createElement('p');
             sources.className = 'mock-note';
-            sources.textContent = 'Sample references: GitHub Issue #18 and PR #12; Slack discussion with Alex, Jordan, and Sam; Email from the project lead about the upcoming demo.';
+            sources.textContent = sample.references_text;
             const detailLink = document.createElement('a');
-            detailLink.href = 'issue.html';
-            detailLink.target = '_top';
-            detailLink.textContent = 'Explore Issue #18 and its source context';
-
-            exchange.append(questionLabel, questionText, answerLabel, answer, sources, detailLink);
+            exchange.append(questionLabel, questionText, answerLabel, answer, sources);
+            try {
+                const url = new URL(sample.link_url, window.location.href);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                    throw new Error('Unsupported sample link protocol.');
+                }
+                detailLink.href = url.href;
+                detailLink.target = '_top';
+                detailLink.textContent = sample.link_label;
+                exchange.append(detailLink);
+            } catch (error) {
+                console.error(error);
+                const warning = document.createElement('p');
+                warning.textContent = 'Sample reference link unavailable.';
+                exchange.append(warning);
+            }
             chatMessages.append(exchange);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            questionInput.value = '';
-            questionInput.focus();
-        });
+        }
+
 
     </script>
 </body>
+
 
 </html>
