@@ -12,6 +12,22 @@ class ActionRepository {
         `);
     }
 
+    getActionsForIssue(issueId) {
+        return this.db.prepare(`
+            SELECT action_id, issue_id, title, description, evidence,
+                preview_label, preview_text, confirm_label, display_order
+            FROM suggested_actions
+            WHERE issue_id = ?
+            ORDER BY display_order
+        `).all(issueId);
+    }
+
+    actionExists(actionId) {
+        return this.db.prepare(`
+            SELECT 1 FROM suggested_actions WHERE action_id = ?
+        `).get(actionId) !== undefined;
+    }
+
     saveDecision(actionId, decision) {
         const statement = this.db.prepare(`
             INSERT INTO action_decisions (action_id, decision)

@@ -101,61 +101,50 @@
 
 <body>
     <main aria-labelledby="actions-heading">
-        <h2 id="actions-heading">AI Suggested Actions</h2>
-        <p>Suggested next steps for Issue #18, based on its GitHub, Slack, and Email context. Review each action, then
-            confirm or deny it.</p>
+        <h2 id="actions-heading">Sample Suggested Actions</h2>
+        <p>Review each sample action, then confirm or deny it.</p>
         <p class="note">Decisions are saved locally. No GitHub task, Slack message, or email is sent.</p>
-
-        <section class="action" data-action-id="investigate" aria-labelledby="action-investigate">
-            <h3 id="action-investigate">1. Create a task to investigate the data retrieval flow</h3>
-            <p>Recommended first: trace the response through PR #12 to find where repository information stops reaching
-                the dashboard.</p>
-            <p class="evidence">Context: GitHub PR #12 changed retrieval logic; Jordan and Maya report a response
-                mapping problem in Slack.</p>
-            <p class="preview"><strong>Proposed GitHub task:</strong> “Trace repository response from PR #12 to
-                dashboard” · Assigned to Alex · Linked to Issue #18.</p>
-            <div class="buttons">
-                <button type="button" data-decision="confirm"
-                    data-result="Demo: investigation task created and assigned to Alex for Issue #18.">Confirm — Create
-                    task</button>
-                <button type="button" data-decision="deny">Deny</button>
-            </div>
-            <p class="result" role="status" tabindex="-1"></p>
-        </section>
-
-        <section class="action" data-action-id="update" aria-labelledby="action-update">
-            <h3 id="action-update">2. Share an investigation update with the team</h3>
-            <p>Keep the team informed about the suspected cause and who is investigating it.</p>
-            <p class="evidence">Context: Alex, Jordan, and Sam are discussing the empty dashboard in Slack.</p>
-            <p class="preview"><strong>Proposed Slack message:</strong> “Issue #18: the repository connects, but
-                dashboard data is missing. Alex is investigating the retrieval flow changed in PR #12. The cause is not
-                yet confirmed.”</p>
-            <div class="buttons">
-                <button type="button" data-decision="confirm"
-                    data-result="Demo: investigation update posted to the team’s Slack discussion.">Confirm — Post
-                    update</button>
-                <button type="button" data-decision="deny">Deny</button>
-            </div>
-            <p class="result" role="status" tabindex="-1"></p>
-        </section>
-
-        <section class="action" data-action-id="email" aria-labelledby="action-email">
-            <h3 id="action-email">3. Reply to the project lead about the demo</h3>
-            <p>Acknowledge the demo blocker and explain the next step without promising a fix date.</p>
-            <p class="evidence">Context: the project lead’s email asks the team to investigate before the next demo.</p>
-            <p class="preview"><strong>Proposed email reply:</strong> “We are investigating Issue #18. Alex is checking
-                how repository data reaches the dashboard after the changes in PR #12. We will share a further update
-                once the cause is verified.”</p>
-            <div class="buttons">
-                <button type="button" data-decision="confirm"
-                    data-result="Demo: reply sent to the project lead’s email thread.">Confirm — Send reply</button>
-                <button type="button" data-decision="deny">Deny</button>
-            </div>
-            <p class="result" role="status" tabindex="-1"></p>
-        </section>
+        <p id="actions-message" role="status">Loading suggested actions...</p>
+        <div id="actions-list"></div>
     </main>
     <script>
-        document.querySelectorAll('.action').forEach(function (action) {
+        function createAction(item, index) {
+            const action = document.createElement('section');
+            action.className = 'action';
+            action.dataset.actionId = item.action_id;
+
+            const heading = document.createElement('h3');
+            heading.textContent = (index + 1) + '. ' + item.title;
+            const description = document.createElement('p');
+            description.textContent = item.description;
+            const evidence = document.createElement('p');
+            evidence.className = 'evidence';
+            evidence.textContent = item.evidence;
+            const preview = document.createElement('p');
+            preview.className = 'preview';
+            const previewLabel = document.createElement('strong');
+            previewLabel.textContent = item.preview_label;
+            preview.append(previewLabel, document.createTextNode(' ' + item.preview_text));
+            const buttons = document.createElement('div');
+            buttons.className = 'buttons';
+            const confirm = document.createElement('button');
+            confirm.type = 'button';
+            confirm.dataset.decision = 'confirm';
+            confirm.textContent = item.confirm_label;
+            const deny = document.createElement('button');
+            deny.type = 'button';
+            deny.dataset.decision = 'deny';
+            deny.textContent = 'Deny';
+            buttons.append(confirm, deny);
+            const result = document.createElement('p');
+            result.className = 'result';
+            result.setAttribute('role', 'status');
+            result.tabIndex = -1;
+            action.append(heading, description, evidence, preview, buttons, result);
+            return action;
+        }
+
+        function setupAction(action) {
             const actionId = action.dataset.actionId;
             const buttons = action.querySelectorAll('button');
             const result = action.querySelector('.result');
@@ -229,7 +218,32 @@
             });
 
             loadDecision();
-        });
+        }
+
+        async function loadActions() {
+            const message = document.getElementById('actions-message');
+            const list = document.getElementById('actions-list');
+            const issueId = new URLSearchParams(window.location.search).get('id') ?? '18';
+
+            try {
+                const response = await fetch('/api/issues/' + encodeURIComponent(issueId) + '/actions');
+                if (!response.ok) {
+                    throw new Error('Could not load suggested actions.');
+                }
+                const actions = await response.json();
+                message.textContent = actions.length ? '' : 'No suggested actions for this issue.';
+                actions.forEach(function (item, index) {
+                    const action = createAction(item, index);
+                    list.append(action);
+                    setupAction(action);
+                });
+            } catch (error) {
+                console.error(error);
+                message.textContent = 'Could not load suggested actions. Reload the page to retry.';
+            }
+        }
+
+        loadActions();
     </script>
 </body>
 
