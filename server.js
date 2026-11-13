@@ -6,9 +6,9 @@ const IssueRepository = require('./src/repositories/issueRepository');
 const IssueService = require('./src/services/issueService');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-const repository = new ActionRepository(path.join(__dirname, 'commu.db'));
+const repository = new ActionRepository(process.env.COMMU_DB_PATH || path.join(__dirname, 'commu.db'));
 const actionService = new ActionService(repository);
 const issueService = new IssueService(new IssueRepository(repository.db));
 
@@ -16,6 +16,11 @@ app.use(express.json());
 
 app.get('/api/issues/:issueId', (req, res) => {
     res.json(issueService.getIssue(req.params.issueId));
+});
+
+app.get('/api/issues/:issueId/actions', (req, res) => {
+    const issue = issueService.getIssue(req.params.issueId);
+    res.json(actionService.getActionsForIssue(issue.id));
 });
 
 app.get('/api/actions/:actionId', (req, res) => {

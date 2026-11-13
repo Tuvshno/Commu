@@ -83,7 +83,7 @@
 
             <iframe id="notifications" src="notifications.html" title="GitHub, Slack, and Email information for Issue 18" width="100%" height="1300" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
 
-            <iframe id="actions" src="actions.html" title="Suggested actions for Issue 18" width="100%" height="1100" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
+            <iframe id="actions" title="Suggested actions" width="100%" height="1100" style="display: block; border: 0; margin-bottom: 18px;"></iframe>
 
             <iframe id="question" src="question.html" title="Ask about the project" width="100%" height="540" style="display: block; border: 0;"></iframe>
             </div>
@@ -115,6 +115,8 @@
             document.getElementById('issue-assignee').textContent = issue.assignee;
             document.getElementById('issue-updated').textContent = issue.updated_label;
             document.getElementById('issue-source-count').textContent = issue.source_count;
+            document.getElementById('actions').src = 'actions.html?id=' + encodeURIComponent(issue.id);
+            document.getElementById('actions').title = 'Suggested actions for Issue ' + issue.id;
             document.title = 'Issue #' + issue.id + ' - Commu';
             document.getElementById('issue-content').hidden = false;
             message.textContent = '';
