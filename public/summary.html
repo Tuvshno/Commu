@@ -10,29 +10,43 @@
         .detail-section { background: white; border: 1px solid #ccc; padding: 20px; }
         h2 { margin-top: 0; }
         p { line-height: 1.6; }
+        #summary-text { white-space: pre-line; }
     </style>
 </head>
 <body>
-    <main aria-label="AI summary for Issue 18">
+    <main aria-label="Issue summary">
         <section class="detail-section">
 
                 <h2>AI Summary</h2>
 
-                <p>
-                    The GitHub repository connects successfully, but the
-                    dashboard is not displaying repository information.
-                    Multiple team members have reported the same behavior.
-                    A recent pull request changed the repository retrieval
-                    logic, which may be related to the problem.
-                </p>
-
-                <p>
-                    The team is currently investigating the GitHub data
-                    request and believes the issue occurs after the repository
-                    connection has already completed successfully.
-                </p>
+                <p id="summary-text" role="status">Loading summary...</p>
 
             </section>
     </main>
+    <script>
+        async function loadSummary() {
+            const text = document.getElementById('summary-text');
+            const issueId = new URLSearchParams(window.location.search).get('id') ?? '18';
+            try {
+                const response = await fetch('/api/issues/' + encodeURIComponent(issueId) + '/summary');
+                if (!response.ok) {
+                    if (response.status === 400) throw new Error('Invalid issue ID.');
+                    if (response.status === 404) throw new Error('Issue not found.');
+                    throw new Error('Could not load the summary. Reload the page to retry.');
+                }
+                const summary = await response.json();
+                text.textContent = summary && summary.detail_text
+                    ? summary.detail_text
+                    : 'No detailed summary available for this issue.';
+            } catch (error) {
+                console.error(error);
+                text.textContent = error instanceof TypeError
+                    ? 'Could not load the summary. Check the server and reload to retry.'
+                    : error.message;
+            }
+        }
+
+        loadSummary();
+    </script>
 </body>
 </html>

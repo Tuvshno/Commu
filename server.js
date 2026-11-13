@@ -4,8 +4,8 @@ const ActionRepository = require('./src/repositories/actionRepository');
 const ActionService = require('./src/services/actionService');
 const IssueRepository = require('./src/repositories/issueRepository');
 const IssueService = require('./src/services/issueService');
-const NotificationRepository = require('./src/repositories/notificationRepository');
-const NotificationService = require('./src/services/notificationService');
+const SummaryRepository = require('./src/repositories/summaryRepository');
+const SummaryService = require('./src/services/summaryService');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,12 +13,17 @@ const port = process.env.PORT || 3000;
 const repository = new ActionRepository(process.env.COMMU_DB_PATH || path.join(__dirname, 'commu.db'));
 const actionService = new ActionService(repository);
 const issueService = new IssueService(new IssueRepository(repository.db));
-const notificationService = new NotificationService(new NotificationRepository(repository.db));
+const summaryService = new SummaryService(new SummaryRepository(repository.db));
 
 app.use(express.json());
 
 app.get('/api/issues/:issueId', (req, res) => {
     res.json(issueService.getIssue(req.params.issueId));
+});
+
+app.get('/api/issues/:issueId/summary', (req, res) => {
+    const issue = issueService.getIssue(req.params.issueId);
+    res.json(summaryService.getSummaryForIssue(issue.id) ?? null);
 });
 
 app.get('/api/issues/:issueId/actions', (req, res) => {
@@ -37,10 +42,6 @@ app.put('/api/actions/:actionId', (req, res) => {
         req.body && req.body.decision
     );
     res.json(decision);
-});
-
-app.get('/api/issues/:issueId/notifications', (req, res) => {
-    res.json(notificationService.getNotificationsForIssue(req.params.issueId));
 });
 
 const publicFiles = new Set([
@@ -66,10 +67,11 @@ app.get('/:file', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    if (err instanceof ActionService.ValidationError ||
-        err instanceof IssueService.ValidationError ||
-        err instanceof NotificationService.ValidationError
-    ) {
+    if (err instanceof IssueService.NotFoundError) {
+        return res.status(404).json({ error: err.message });
+    }
+
+    if (err instanceof ActionService.ValidationError || err instanceof IssueService.ValidationError) {
         return res.status(400).json({ error: err.message });
     }
 
