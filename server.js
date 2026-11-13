@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
-const ActionRepository = require('./actionRepository');
-const ActionService = require('./actionService');
+const ActionRepository = require('./src/repositories/actionRepository');
+const ActionService = require('./src/services/actionService');
 
 const app = express();
 const port = 3000;
@@ -35,7 +35,7 @@ const publicFiles = new Set([
 ]);
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/:file', (req, res, next) => {
@@ -43,7 +43,7 @@ app.get('/:file', (req, res, next) => {
         return next();
     }
 
-    res.sendFile(path.join(__dirname, req.params.file));
+    res.sendFile(path.join(__dirname, 'public', req.params.file));
 });
 
 app.use((err, req, res, next) => {
