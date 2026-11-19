@@ -10,6 +10,8 @@ const NotificationRepository = require('./src/repositories/notificationRepositor
 const NotificationService = require('./src/services/notificationService');
 const SummaryRepository = require('./src/repositories/summaryRepository');
 const SummaryService = require('./src/services/summaryService');
+const ProjectRepository = require('./src/repositories/projectRepository');
+const ProjectService = require('./src/services/projectService');
 
 
 const app = express();
@@ -22,9 +24,18 @@ const issueService = new IssueService(new IssueRepository(repository.db));
 const questionService = new QuestionService(new QuestionRepository(repository.db));
 const notificationService = new NotificationService(new NotificationRepository(repository.db));
 const summaryService = new SummaryService(new SummaryRepository(repository.db));
+const projectService = new ProjectService(new ProjectRepository(repository.db), new IssueRepository(repository.db));
 
 
 app.use(express.json());
+
+app.get('/api/projects', (req, res) => {
+    res.json(projectService.getProjects());
+});
+
+app.get('/api/projects/:projectId/issues', (req, res) => {
+    res.json(projectService.getIssues(req.params.projectId));
+});
 
 
 app.get('/api/issues/:issueId', (req, res) => {
@@ -96,13 +107,15 @@ app.get('/:file', (req, res, next) => {
 
 
 app.use((err, req, res, next) => {
-    if (err instanceof IssueService.NotFoundError || err instanceof QuestionService.NotFoundError) {
+    if (err instanceof IssueService.NotFoundError || err instanceof QuestionService.NotFoundError ||
+        err instanceof ProjectService.NotFoundError) {
         return res.status(404).json({ error: err.message });
     }
 
 
     if (err instanceof ActionService.ValidationError || err instanceof IssueService.ValidationError ||
-        err instanceof QuestionService.ValidationError || err instanceof NotificationService.ValidationError) {
+        err instanceof QuestionService.ValidationError || err instanceof NotificationService.ValidationError ||
+        err instanceof ProjectService.ValidationError) {
         return res.status(400).json({ error: err.message });
     }
 
