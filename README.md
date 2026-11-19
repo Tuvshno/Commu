@@ -20,7 +20,7 @@ COMMU DB MOCK DATA:
 
 | Table | Purpose | Fields |
 |---|---|---|
-| `issues` | Stores issue details | `id`, `title`, `status`, `priority`, `assignee`, `updated_label` |
+| `issues` | Stores issue details | `id`, `title`, `status`, `priority`, `assignee`, `updated_label`, `project_id` |
 | `summaries` | Stores short and full issue summaries | `issue_id`, `dashboard_text`, `detail_text` |
 | `notifications` | Stores related GitHub, Slack, and email content | `id`, `issue_id`, `source`, `title`, `author`, `time_label`, `body`, `link_url`, `link_label`, `display_order` |
 | `issue_source_counts` | Stores dashboard counts for each source | `issue_id`, `source`, `item_count` |

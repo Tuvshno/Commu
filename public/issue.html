@@ -35,7 +35,7 @@
 
         <main class="detail-content">
 
-            <a href="index.html" class="back-link">
+            <a href="index.html" class="back-link" id="back-to-dashboard">
                 ← Back to Dashboard
             </a>
 
@@ -122,6 +122,7 @@
             document.getElementById('notifications').src = 'notifications.html?id=' + encodeURIComponent(issue.id);
             document.getElementById('notifications').title = 'Sources for Issue ' + issue.id;
             document.getElementById('question').src = 'question.html?id=' + encodeURIComponent(issue.id);
+            document.getElementById('back-to-dashboard').href = 'index.html?project=' + encodeURIComponent(issue.project_id || 1);
             document.title = 'Issue #' + issue.id + ' - Commu';
             document.getElementById('issue-content').hidden = false;
             message.textContent = '';

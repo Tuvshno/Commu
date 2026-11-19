@@ -15,8 +15,7 @@
 
         <nav class="sidebar" aria-label="Main navigation">
             <h2>Commu</h2>
-            <a href="index.html" aria-current="page">Project #1</a>
-            <a href="index.html" aria-current="page">Project #2</a>
+            <div id="project-links"></div>
         </nav>
 
 
@@ -41,110 +40,93 @@
 
                 <div class="page-header">
 
-                    <h1>Current Issues</h1>
+                    <h1 id="project-heading">Current Issues</h1>
                     <p>Quick summaries of active project issues.</p>
 
                 </div>
 
 
-                <a class="issue-card" href="issue.html?id=18" aria-labelledby="issue-18-title">
-
-                    <div class="issue-header">
-
-                        <div>
-
-                            <div class="issue-number">
-                                Issue #18
-                            </div>
-
-                            <h2 class="issue-title" id="issue-18-title">
-                                Dashboard not loading repository data
-                            </h2>
-
+                <p id="dashboard-message" role="status">Loading projects...</p>
+                <div id="issue-list"></div>
+                <template id="issue-template">
+                    <a class="issue-card">
+                        <div class="issue-header">
+                            <div><div class="issue-number"></div><h2 class="issue-title"></h2></div>
+                            <div class="issue-tags"><span class="status" data-field="status"></span><span class="status" data-field="priority"></span></div>
                         </div>
-
-
-                        <div class="issue-tags">
-
-                            <span class="status">
-                                Open
-                            </span>
-
-                            <span class="status">
-                                High Priority
-                            </span>
-
+                        <div class="summary"><strong>AI Summary</strong><p></p></div>
+                        <div class="source-counts">
+                            <div class="source-count">GitHub <strong data-field="github_count"></strong></div>
+                            <div class="source-count">Slack <strong data-field="slack_count"></strong></div>
+                            <div class="source-count">Email <strong data-field="email_count"></strong></div>
                         </div>
-
-                    </div>
-
-
-                    <div class="summary">
-
-                        <strong>AI Summary</strong>
-
-                        <p id="issue-18-summary" role="status">Loading summary...</p>
-
-                    </div>
-
-
-                    <div class="source-counts">
-
-                        <div class="source-count">
-                            GitHub
-                            <strong>2</strong>
-                        </div>
-
-                        <div class="source-count">
-                            Slack
-                            <strong>5</strong>
-                        </div>
-
-                        <div class="source-count">
-                            Email
-                            <strong>1</strong>
-                        </div>
-
-                    </div>
-
-
-                    <div class="issue-footer">
-
-                        <div class="metadata">
-
-                            <span>
-                                Assigned: Alex
-                            </span>
-
-                            <span>
-                                Updated: Today
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </a>
+                        <div class="issue-footer"><div class="metadata"><span data-field="assignee"></span><span data-field="updated_label"></span></div></div>
+                    </a>
+                </template>
             </main>
         </div>
     </div>
     <script>
-        async function loadDashboardSummary() {
-            const summary = document.getElementById('issue-18-summary');
+        async function getJson(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Could not load dashboard data.');
+            return response.json();
+        }
+
+        function renderIssue(issue) {
+            const card = document.getElementById('issue-template').content.firstElementChild.cloneNode(true);
+            card.href = 'issue.html?id=' + encodeURIComponent(issue.id);
+            const title = card.querySelector('.issue-title');
+            title.id = 'issue-' + issue.id + '-title';
+            title.textContent = issue.title;
+            card.setAttribute('aria-labelledby', title.id);
+            card.querySelector('.issue-number').textContent = 'Issue #' + issue.id;
+            card.querySelector('.summary p').textContent = issue.dashboard_text || 'No summary available.';
+            ['status', 'priority', 'github_count', 'slack_count', 'email_count'].forEach(function (field) {
+                card.querySelector('[data-field="' + field + '"]').textContent = issue[field];
+            });
+            card.querySelector('[data-field="assignee"]').textContent = 'Assigned: ' + issue.assignee;
+            card.querySelector('[data-field="updated_label"]').textContent = 'Updated: ' + issue.updated_label;
+            return card;
+        }
+
+        async function loadDashboard() {
+            const message = document.getElementById('dashboard-message');
             try {
-                const response = await fetch('/api/issues/18/summary');
-                if (!response.ok) {
-                    throw new Error('Could not load the summary.');
+                const projects = await getJson('/api/projects');
+                const requestedId = new URLSearchParams(location.search).get('project');
+                const selected = requestedId === null
+                    ? projects[0]
+                    : projects.find(function (project) { return String(project.id) === requestedId; });
+                const links = document.getElementById('project-links');
+                projects.forEach(function (project) {
+                    const link = document.createElement('a');
+                    link.href = 'index.html?project=' + encodeURIComponent(project.id);
+                    link.textContent = project.name;
+                    if (selected && selected.id === project.id) link.setAttribute('aria-current', 'page');
+                    links.append(link);
+                });
+                if (!projects.length) {
+                    message.textContent = 'No projects available.';
+                    return;
                 }
-                const data = await response.json();
-                summary.textContent = data ? data.dashboard_text : 'No summary available for this issue.';
+                if (!selected) {
+                    message.textContent = 'Project not found. Choose a project from the sidebar.';
+                    return;
+                }
+                document.getElementById('project-heading').textContent = selected.name + ' — Current Issues';
+                document.title = selected.name + ' - Commu';
+                message.textContent = 'Loading issues...';
+                const issues = await getJson('/api/projects/' + encodeURIComponent(selected.id) + '/issues');
+                document.getElementById('issue-list').replaceChildren(...issues.map(renderIssue));
+                message.textContent = issues.length ? '' : 'No issues available for this project.';
             } catch (error) {
                 console.error(error);
-                summary.textContent = 'Could not load the summary. Reload the page to retry.';
+                message.textContent = 'Could not load the dashboard. Check the server and reload to retry.';
             }
         }
 
-        loadDashboardSummary();
+        loadDashboard();
     </script>
 </body>
 </html>
