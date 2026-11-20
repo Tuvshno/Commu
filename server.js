@@ -87,7 +87,8 @@ const publicFiles = new Set([
     'notifications.html',
     'actions.html',
     'question.html',
-    'styles.css'
+    'styles.css',
+    'ui.js'
 ]);
 
 
